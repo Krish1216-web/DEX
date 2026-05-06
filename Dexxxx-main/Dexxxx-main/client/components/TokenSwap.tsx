@@ -136,6 +136,9 @@ export function TokenSwap() {
   const [txState, setTxState] = useState<"idle" | "pending" | "success" | "failed">("idle");
   const [txStatusText, setTxStatusText] = useState("");
   const [riskAcknowledged, setRiskAcknowledged] = useState(false);
+  const [tradingMode, setTradingMode] = useState<"market" | "limit">("market");
+  const [limitPrice, setLimitPrice] = useState("");
+  const [useWalletBalance, setUseWalletBalance] = useState(false);
 
   const handleSelectFromToken = (token: Token) => {
     const matched = TOKENS_WITH_PRICES.find((t) => t.address === token.address);
@@ -176,7 +179,8 @@ export function TokenSwap() {
   const [isSwapping, setIsSwapping] = useState(false);
 
   const isOnChainPair =
-    fromToken.address === TOKEN_A_ADDRESS && toToken.address === TOKEN_B_ADDRESS;
+    (fromToken.address === TOKEN_A_ADDRESS && toToken.address === TOKEN_B_ADDRESS) ||
+    (fromToken.address === TOKEN_B_ADDRESS && toToken.address === TOKEN_A_ADDRESS);
 
   const handleSwap = async () => {
     setShowConfirm(false);
@@ -215,7 +219,7 @@ export function TokenSwap() {
         status: "pending",
       });
 
-      // On-chain path (real transaction): Token A -> Token B through pool.
+      // On-chain path (real transaction): Token A <-> Token B through pool.
       if (isOnChainPair) {
         if (typeof window === "undefined" || !(window as any).ethereum) {
           setErrorMessage("No wallet provider found. Install MetaMask or another wallet.");
@@ -225,7 +229,6 @@ export function TokenSwap() {
         const provider = new ethers.BrowserProvider((window as any).ethereum);
         const signer = await provider.getSigner();
 
-        const tokenA = await getTokenContract(TOKEN_A_ADDRESS, signer);
         const pool = await getPoolContract(signer);
 
         const amount = ethers.parseUnits(fromAmount, 18);
@@ -238,7 +241,26 @@ export function TokenSwap() {
           return;
         }
 
-        const expectedOut = (reserveB * amount) / (reserveA + amount);
+        let expectedOut: bigint;
+        let tokenContractAddress: string;
+        let swapFunction: string;
+
+        // Determine swap direction
+        if (fromToken.address === TOKEN_A_ADDRESS && toToken.address === TOKEN_B_ADDRESS) {
+          // Token A -> Token B
+          expectedOut = (reserveB * amount) / (reserveA + amount);
+          tokenContractAddress = TOKEN_A_ADDRESS;
+          swapFunction = "swapAforB";
+        } else if (fromToken.address === TOKEN_B_ADDRESS && toToken.address === TOKEN_A_ADDRESS) {
+          // Token B -> Token A
+          expectedOut = (reserveA * amount) / (reserveB + amount);
+          tokenContractAddress = TOKEN_B_ADDRESS;
+          swapFunction = "swapBforA";
+        } else {
+          setErrorMessage("Invalid token pair for on-chain swap.");
+          return;
+        }
+
         if (expectedOut <= 0n) {
           setErrorMessage("Swap output is too small. Increase amount.");
           return;
@@ -248,10 +270,17 @@ export function TokenSwap() {
         const minOut = (expectedOut * BigInt(10000 - slippageBps)) / 10000n;
         const deadline = Math.floor(Date.now() / 1000) + 60 * 20;
 
-        const approveTx = await tokenA.approve(POOL_ADDRESS, amount);
+        const token = await getTokenContract(tokenContractAddress, signer);
+        const approveTx = await token.approve(POOL_ADDRESS, amount);
         await approveTx.wait();
 
-        const swapTx = await pool.swapAforB(amount, minOut, deadline);
+        let swapTx;
+        if (swapFunction === "swapAforB") {
+          swapTx = await pool.swapAforB(amount, minOut, deadline);
+        } else {
+          swapTx = await pool.swapBforA(amount, minOut, deadline);
+        }
+
         const receipt = await swapTx.wait();
 
         const txHash = receipt?.hash || swapTx.hash;
@@ -316,7 +345,7 @@ export function TokenSwap() {
           <div>
             <h2 className="text-2xl font-extrabold text-foreground">Instant Swap</h2>
             <p className="text-xs text-muted-foreground mt-1">
-              Real-time route with transparent pricing
+              {isOnChainPair ? "On-chain routing with real liquidity" : "Real-time route with transparent pricing"}
             </p>
           </div>
           <button
@@ -339,12 +368,56 @@ export function TokenSwap() {
         {expandSettings && (
           <Collapsible open={expandSettings} onOpenChange={setExpandSettings}>
             <CollapsibleContent className="mb-4">
-              <div className="space-y-3 p-3 bg-secondary/20 rounded-lg border border-primary/10">
+              <div className="space-y-4 p-4 bg-secondary/20 rounded-lg border border-primary/10">
+                {/* Trading Mode */}
                 <div>
-                  <label className="text-xs font-semibold text-muted-foreground">
+                  <label className="text-xs font-semibold text-muted-foreground mb-2 block">
+                    Trading Mode
+                  </label>
+                  <div className="flex gap-2">
+                    {(["market", "limit"] as const).map((mode) => (
+                      <button
+                        key={mode}
+                        onClick={() => setTradingMode(mode)}
+                        className={`flex-1 px-3 py-2 text-xs font-semibold rounded transition-colors capitalize ${
+                          tradingMode === mode
+                            ? "bg-gradient-to-r from-primary to-accent text-primary-foreground shadow-lg"
+                            : "bg-secondary/50 text-muted-foreground hover:bg-secondary/75"
+                        }`}
+                      >
+                        {mode}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Limit Price (for limit orders) */}
+                {tradingMode === "limit" && (
+                  <div>
+                    <label className="text-xs font-semibold text-muted-foreground mb-2 block">
+                      Limit Price ({toToken.symbol})
+                    </label>
+                    <input
+                      type="number"
+                      placeholder="Enter limit price"
+                      value={limitPrice}
+                      onChange={(e) => setLimitPrice(e.target.value)}
+                      className="w-full px-3 py-2 bg-secondary/30 border border-primary/25 rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    />
+                    {limitPrice && Number(limitPrice) > 0 && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Current: {(fromToken.price / toToken.price).toFixed(6)}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* Slippage Tolerance */}
+                <div>
+                  <label className="text-xs font-semibold text-muted-foreground mb-2 block">
                     Slippage Tolerance
                   </label>
-                  <div className="flex gap-2 mt-2">
+                  <div className="flex gap-2">
                     {["0.1", "0.5", "1", "2"].map((value) => (
                       <button
                         key={value}
@@ -359,6 +432,21 @@ export function TokenSwap() {
                       </button>
                     ))}
                   </div>
+                </div>
+
+                {/* Advanced Options */}
+                <div className="pt-2 border-t border-primary/10">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={useWalletBalance}
+                      onChange={(e) => setUseWalletBalance(e.target.checked)}
+                      className="w-4 h-4 rounded"
+                    />
+                    <span className="text-xs font-semibold text-muted-foreground">
+                      Use maximum wallet balance
+                    </span>
+                  </label>
                 </div>
               </div>
             </CollapsibleContent>
@@ -442,6 +530,12 @@ export function TokenSwap() {
         {fromAmount && (
           <div className="mb-6 p-3 bg-secondary/20 rounded-lg border border-primary/10 space-y-2">
             <div className="flex justify-between text-xs">
+              <span className="text-muted-foreground">Exchange Rate</span>
+              <span className="font-semibold text-foreground">
+                1 {fromToken.symbol} = {(fromToken.price / toToken.price).toFixed(6)} {toToken.symbol}
+              </span>
+            </div>
+            <div className="flex justify-between text-xs">
               <span className="text-muted-foreground">Price Impact</span>
               <span className="font-semibold text-foreground">{priceImpact}%</span>
             </div>
@@ -461,6 +555,24 @@ export function TokenSwap() {
               <span className="text-muted-foreground">Routing Fee</span>
               <span className="font-semibold text-foreground">0.30%</span>
             </div>
+            {isOnChainPair && (
+              <div className="flex justify-between text-xs pt-2 border-t border-primary/10">
+                <span className="text-muted-foreground">Execution Type</span>
+                <span className="font-semibold text-accent">On-Chain</span>
+              </div>
+            )}
+            {tradingMode === "limit" && limitPrice && (
+              <div className="flex justify-between text-xs">
+                <span className="text-muted-foreground">Limit Price</span>
+                <span className={`font-semibold ${
+                  Number(limitPrice) >= Number((fromToken.price / toToken.price).toFixed(6))
+                    ? "text-green-400"
+                    : "text-yellow-400"
+                }`}>
+                  {limitPrice} {toToken.symbol}
+                </span>
+              </div>
+            )}
           </div>
         )}
 
@@ -495,6 +607,15 @@ export function TokenSwap() {
               setErrorMessage("Connect your wallet to proceed.");
               return;
             }
+            
+            // Validate limit order
+            if (tradingMode === "limit") {
+              if (!limitPrice || Number(limitPrice) <= 0) {
+                setErrorMessage("Enter a valid limit price.");
+                return;
+              }
+            }
+            
             setShowConfirm(true);
           }}
           disabled={
@@ -581,6 +702,10 @@ export function TokenSwap() {
                 <span className="font-semibold text-foreground">
                   {isOnChainPair ? "On-chain" : "Quoted route"}
                 </span>
+              </div>
+              <div className="flex justify-between text-xs mt-2">
+                <span className="text-muted-foreground">Trading Mode</span>
+                <span className="font-semibold text-foreground capitalize">{tradingMode}</span>
               </div>
               <div className="flex justify-between text-xs mt-2">
                 <span className="text-muted-foreground">Estimated Fee</span>

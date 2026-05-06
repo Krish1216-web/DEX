@@ -457,6 +457,99 @@ export default function Liquidity() {
             </Card>
           )}
 
+          {/* On-Chain Pool Stats */}
+          <section className="mb-16">
+            <h2 className="text-2xl font-black text-foreground mb-6">On-Chain Pool Statistics (TKA/TKB)</h2>
+            
+            <div className="grid md:grid-cols-3 gap-4 mb-8">
+              <Card className="glass-panel rounded-2xl border-primary/25 p-5">
+                <p className="text-xs text-muted-foreground mb-2">Current Reserves</p>
+                <div className="space-y-1">
+                  <p className="text-lg font-bold text-primary">Token A: Loading...</p>
+                  <p className="text-lg font-bold text-accent">Token B: Loading...</p>
+                </div>
+              </Card>
+              
+              <Card className="glass-panel rounded-2xl border-primary/25 p-5">
+                <p className="text-xs text-muted-foreground mb-2">Pool Price</p>
+                <p className="text-2xl font-black text-foreground">1 TKA ≈ 1.00 TKB</p>
+                <p className="text-xs text-muted-foreground mt-2">Balanced AMM pricing</p>
+              </Card>
+              
+              <Card className="glass-panel rounded-2xl border-primary/25 p-5">
+                <p className="text-xs text-muted-foreground mb-2">Trading Fee</p>
+                <p className="text-2xl font-black text-success">0.30%</p>
+                <p className="text-xs text-muted-foreground mt-2">Per transaction</p>
+              </Card>
+            </div>
+          </section>
+
+          {/* My Positions */}
+          <section className="mb-16">
+            <h2 className="text-2xl font-black text-foreground mb-6">My Positions</h2>
+
+            <Card className="glass-panel rounded-3xl border-primary/25 p-8 text-center">
+              <div className="text-4xl mb-4">💧</div>
+              <h3 className="text-xl font-bold text-foreground mb-2">
+                You have 1 active position
+              </h3>
+              <p className="text-muted-foreground mb-6">
+                TKA/TKB pool earning 24.5% APY
+              </p>
+
+              <Card className="bg-card/70 border-primary/25 p-6 rounded-2xl mb-6 text-left">
+                <div className="grid sm:grid-cols-2 gap-6">
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-2">
+                      Liquidity Provided
+                    </p>
+                    <p className="text-2xl font-black text-primary">$5,000.00</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      2,500 TKA + 2,500 TKB
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-2">
+                      Fees Earned (30d)
+                    </p>
+                    <p className="text-2xl font-black text-success">
+                      $1,250.75
+                    </p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      2.5% of your position
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-6 p-4 bg-primary/10 rounded-xl border border-primary/25">
+                  <p className="text-sm text-foreground font-semibold mb-2">
+                    Current APY: 24.5%
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Projected annual earnings: $12,250
+                  </p>
+                </div>
+
+                <div className="flex gap-3 mt-6">
+                  <Button
+                    onClick={openManagePosition}
+                    className="flex-1 rounded-xl bg-gradient-to-r from-primary to-accent hover:opacity-95 text-primary-foreground"
+                  >
+                    Manage Position
+                  </Button>
+                  <Button
+                    onClick={openWithdrawPosition}
+                    variant="outline"
+                    className="flex-1 rounded-xl border-primary/30"
+                  >
+                    Withdraw
+                  </Button>
+                </div>
+              </Card>
+            </Card>
+          </section>
+
           {/* My Positions */}
           <section className="mb-16">
             <h2 className="text-2xl font-black text-foreground mb-6">My Positions</h2>
