@@ -1,0 +1,191 @@
+/** @import must precede all other statements */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /**
+   * Tailwind CSS theme
+   * tailwind.config.ts expects the following color variables to be expressed as HSL values.
+   * A different format will require also updating the theme in tailwind.config.ts.
+  */
+  :root {
+    /* DEX Dark Theme */
+    --background: 222 84% 5%;
+    --foreground: 210 40% 98%;
+
+    --card: 222 84% 8%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222 84% 8%;
+    --popover-foreground: 210 40% 98%;
+
+    /* Primary: Vibrant Blue */
+    --primary: 217 92% 55%;
+    --primary-foreground: 222 84% 5%;
+
+    /* Secondary: Cool Gray */
+    --secondary: 217 32% 17%;
+    --secondary-foreground: 210 40% 98%;
+
+    /* Muted: Dark Gray */
+    --muted: 217 32% 17%;
+    --muted-foreground: 215 20% 65%;
+
+    /* Accent: Bright Cyan */
+    --accent: 185 100% 50%;
+    --accent-foreground: 222 84% 5%;
+
+    /* Destructive: Bright Red */
+    --destructive: 0 100% 50%;
+    --destructive-foreground: 210 40% 98%;
+
+    /* Success: Bright Green */
+    --success: 142 100% 43%;
+    --success-foreground: 210 40% 98%;
+
+    --border: 217 32% 17%;
+    --input: 217 32% 17%;
+    --ring: 217 92% 55%;
+
+    --radius: 0.5rem;
+
+    --sidebar-background: 222 84% 8%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 217 92% 55%;
+    --sidebar-primary-foreground: 222 84% 5%;
+    --sidebar-accent: 185 100% 50%;
+    --sidebar-accent-foreground: 222 84% 5%;
+    --sidebar-border: 217 32% 17%;
+    --sidebar-ring: 217 92% 55%;
+  }
+
+  .dark {
+    --background: 222 84% 5%;
+    --foreground: 210 40% 98%;
+
+    --card: 222 84% 8%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222 84% 8%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 217 92% 55%;
+    --primary-foreground: 222 84% 5%;
+
+    --secondary: 217 32% 17%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217 32% 17%;
+    --muted-foreground: 215 20% 65%;
+
+    --accent: 185 100% 50%;
+    --accent-foreground: 222 84% 5%;
+
+    --destructive: 0 100% 50%;
+    --destructive-foreground: 210 40% 98%;
+
+    --success: 142 100% 43%;
+    --success-foreground: 210 40% 98%;
+
+    --border: 217 32% 17%;
+    --input: 217 32% 17%;
+    --ring: 217 92% 55%;
+    --sidebar-background: 222 84% 8%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 217 92% 55%;
+    --sidebar-primary-foreground: 222 84% 5%;
+    --sidebar-accent: 185 100% 50%;
+    --sidebar-accent-foreground: 222 84% 5%;
+    --sidebar-border: 217 32% 17%;
+    --sidebar-ring: 217 92% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    background-image:
+      radial-gradient(circle at 15% 20%, rgba(99, 102, 241, 0.18), transparent 38%),
+      radial-gradient(circle at 85% 15%, rgba(56, 189, 248, 0.15), transparent 36%),
+      radial-gradient(circle at 50% 95%, rgba(16, 185, 129, 0.12), transparent 40%);
+    background-size: cover;
+    min-height: 100vh;
+  }
+
+  .glass-panel {
+    background: rgba(17, 24, 39, 0.56);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+  }
+
+  .card-gradient {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.12), rgba(14, 165, 233, 0.07), rgba(129, 140, 248, 0.09));
+    border: 1px solid rgba(145, 170, 255, 0.18);
+  }
+
+  .glow-ring {
+    box-shadow:
+      0 0 0 1px rgba(76, 160, 255, 0.28),
+      0 0 22px rgba(76, 160, 255, 0.24);
+  }
+
+  .animate-float {
+    animation: floatY 5s ease-in-out infinite;
+  }
+
+  .animate-gradient-shift {
+    animation: gradientShift 5s ease infinite;
+  }
+
+  :where(p, span, li, h1, h2, h3, h4, h5, h6, a, button, label, td, th) {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  pre,
+  code {
+    overflow-x: auto;
+    white-space: pre;
+  }
+}
+
+@keyframes floatY {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
