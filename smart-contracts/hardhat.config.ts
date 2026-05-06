@@ -19,6 +19,6 @@ export default defineConfig({
     },
   },
   etherscan: {
-    apiKey: process.env.JMB79JK9F4PPY7ZHQB9BAAW1INKTYTIC9P,
+    apiKey: process.env.ETHERSCAN_API_KEY,
   },
 });
